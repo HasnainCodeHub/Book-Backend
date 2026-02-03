@@ -1,10 +1,12 @@
 """Neon Postgres connection and session management."""
 
+import os
 from typing import AsyncGenerator, Optional
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -27,14 +29,26 @@ def get_engine():
     global _engine
     if _engine is None:
         settings = get_settings()
-        _engine = create_async_engine(
-            settings.async_database_url,
-            echo=settings.env == "development",
-            pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=10,
-        )
-        logger.info("postgres_engine_created")
+        # Use NullPool for serverless environments (Vercel, AWS Lambda)
+        # This prevents connection pool issues with event loop lifecycle
+        is_serverless = os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+
+        if is_serverless:
+            _engine = create_async_engine(
+                settings.async_database_url,
+                echo=False,
+                poolclass=NullPool,
+            )
+            logger.info("postgres_engine_created", mode="serverless")
+        else:
+            _engine = create_async_engine(
+                settings.async_database_url,
+                echo=settings.env == "development",
+                pool_pre_ping=True,
+                pool_size=5,
+                max_overflow=10,
+            )
+            logger.info("postgres_engine_created", mode="pooled")
     return _engine
 
 
