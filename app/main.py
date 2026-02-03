@@ -97,6 +97,18 @@ Retrieval-Augmented Generation API for the Physical AI & Humanoid Robotics textb
 app = create_app()
 
 
+@app.get("/", tags=["Root"])
+async def root():
+    """Root endpoint - API information."""
+    return {
+        "name": "Physical AI Textbook RAG API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/api/health",
+        "status": "running"
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
 
