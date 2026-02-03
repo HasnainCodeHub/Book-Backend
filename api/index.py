@@ -1,22 +1,10 @@
-import asyncio
-from mangum import Mangum
+import sys
+import os
+
+# Add the project root to the path so we can import app
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app.main import app
 
-# Create the Mangum adapter for ASGI apps
-handler = Mangum(app)
-
-
-def main(event, context):
-    """
-    AWS Lambda handler for the FastAPI application.
-    This is needed for Vercel's serverless functions.
-    """
-    return handler(event, context)
-
-
-# For Vercel deployment
-app_handler = handler
-
-# Export handler for Vercel
-def handler_func(event, context):
-    return handler(event, context)
+# Export the FastAPI app for Vercel
+# Vercel's Python runtime will handle ASGI apps directly
